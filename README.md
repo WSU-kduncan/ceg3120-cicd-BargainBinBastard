@@ -1,4 +1,30 @@
-# README-CI.md
+
+# Continuous Integration Project Overview
+
+This project automates the process of building and publishing a Docker image for an Angular application using GitHub Actions.
+
+Tools used:
+- Docker: containerization
+- GitHub Actions: continuous integration and image publishing
+- DockerHub: image registry
+
+This ensures that every push to the main branch results in a new Docker image published to DockerHub.
+
+## Diagram of CI Process
+
+[ Developer ] 
+     |
+     v
+[ Push to GitHub (main branch) ]
+     |
+     v
+[ GitHub Actions CI Workflow ]
+     |
+     v
+[ Docker Build & Push ]
+     |
+     v
+[ Image in DockerHub ]
 
 ## Docker Setup
 
@@ -42,9 +68,9 @@ Once inside the container, run the following commands:
 
   npm install
   npm run build
-  npx serve -s dist/[folder-name]
+  npx serve -s dist/wsu-hw-ng
 
-Note: Replace [folder-name] with the actual build output folder (e.g., wsu-hw-ng) found in the dist directory.
+Note: Replace "wsu-hw-ng" with the actual build output folder if different.
 
 ### Verifying the Application
 
@@ -65,14 +91,6 @@ RUN npm install -g serve
 EXPOSE 3000
 CMD ["serve", "-s", "dist/wsu-hw-ng", "-l", "3000"]
 
-Explanation:
-- FROM: base image
-- WORKDIR: working directory
-- COPY: copies project files into container
-- RUN: installs dependencies and builds project
-- EXPOSE: documents the port used
-- CMD: starts the server
-
 ### Building the Image
 
 To build the image from the Dockerfile:
@@ -90,6 +108,46 @@ Then access http://localhost:3002 in the browser.
 From inside the container: confirmation message will show that the server is accepting connections.
 
 From host: navigate to the mapped port in a web browser (e.g., http://localhost:3002).
+
+## Configuring GitHub Repository Secrets
+
+To allow GitHub Actions to access DockerHub, a Personal Access Token (PAT) was created in DockerHub with Read/Write scope. The token was stored securely in the GitHub repository’s secrets.
+
+The following secrets were configured:
+- DOCKER_USERNAME: DockerHub username
+- DOCKER_TOKEN: DockerHub Personal Access Token
+
+## CI with GitHub Actions
+
+The GitHub Actions workflow builds and pushes the Docker image to DockerHub whenever a commit is pushed to the main branch.
+
+Workflow steps:
+1. Checkout the GitHub repo
+2. Set up Docker Buildx
+3. Log into DockerHub using repository secrets
+4. Build the Docker image from the Dockerfile
+5. Push the image to DockerHub with the "latest" tag
+
+If used in another repo, update:
+- Docker image tag name
+- DockerHub secrets
+- Branch name (if not using "main")
+
+Link to workflow:
+https://github.com/your-username/your-repo-name/blob/main/.github/workflows/docker-publish.yml
+
+## Testing & Validating
+
+To test:
+- Push a commit to the main branch.
+- Go to the Actions tab in GitHub.
+- Confirm that the workflow runs successfully.
+
+To verify image works:
+  docker pull bargainbinbastard/croop_ceg3120
+  docker run -p 3000:3000 bargainbinbastard/croop_ceg3120
+
+Then navigate to http://localhost:3000 in a browser.
 
 ## Working with Your DockerHub Repository
 
@@ -129,3 +187,11 @@ Once logged in, push the image:
 ### Link to DockerHub Repository
 
 https://hub.docker.com/r/bargainbinbastard/croop_ceg3120
+
+## Resources
+
+- Docker Docs – CI/CD with GitHub Actions: https://docs.docker.com/build/ci/github-actions/
+- GitHub – build-push-action: https://github.com/docker/build-push-action
+- DockerHub – Managing Access Tokens: https://docs.docker.com/docker-hub/access-tokens/
+- Generative AI used: ChatGPT
+  Prompt: Had it generate the diagram for me, had it check my work.
