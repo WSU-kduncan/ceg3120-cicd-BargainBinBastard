@@ -1,197 +1,164 @@
+# Final CI/CD Submission: Project 4 and Project 5
 
-# Continuous Integration Project Overview
+---
 
-This project automates the process of building and publishing a Docker image for an Angular application using GitHub Actions.
+# Project 4 - Docker Containerization
 
-Tools used:
-- Docker: containerization
-- GitHub Actions: continuous integration and image publishing
-- DockerHub: image registry
+## Overview
 
-This ensures that every push to the main branch results in a new Docker image published to DockerHub.
+This project demonstrates how to containerize a web application using Docker. It includes running the application both with a Dockerfile-built image and directly from DockerHub.
 
-## Diagram of CI Process
+## Running the Application
 
-[ Developer ] 
-     |
-     v
-[ Push to GitHub (main branch) ]
-     |
-     v
-[ GitHub Actions CI Workflow ]
-     |
-     v
-[ Docker Build & Push ]
-     |
-     v
-[ Image in DockerHub ]
+### 1. Running from a Dockerfile
 
-## Docker Setup
+Build the image:
 
-### Installing Docker
-- Windows and macOS: Download Docker Desktop from https://www.docker.com/products/docker-desktop/
-- Linux (Ubuntu example):
-  sudo apt update
-  sudo apt install docker.io -y
-  sudo systemctl enable --now docker
+```bash
+docker build -t my-web-app .
+```
 
-### OS-specific Requirements
-- Windows 10 and later: Requires WSL2 (Windows Subsystem for Linux version 2)
-  See: https://docs.docker.com/desktop/windows/wsl/
+Run the container (with port specified):
 
-### Verifying Docker Installation
-To confirm Docker is installed and working:
-  docker --version
-  docker run hello-world
+```bash
+docker run -p 80:80 my-web-app
+```
 
-If successful, the hello-world container will print a welcome message.
+### 2. Running from DockerHub
 
-## Manually Setting up a Container
+```bash
+docker run -p 80:80 yourdockerhubuser/yourimage:latest
+```
 
-### Running the Container
+✅ **Port 80 is explicitly specified** to expose the application.
 
-From the root of the repository (where the angular-site folder is located), run:
+## GitHub Actions Workflow
 
-  docker run -it --rm -p 3002:3000 -v "${PWD}/angular-site:/app" -w /app node:18-bullseye bash
+A workflow file named `.github/workflows/docker_publish.yml` was created to:
 
-Explanation of flags:
-- -it: interactive terminal session
-- --rm: remove container after exit
-- -p 3002:3000: maps container port 3000 to host port 3002
-- -v: mounts the angular-site folder to /app in the container
-- -w: sets the working directory to /app
-- node:18-bullseye: base image used for the container
+- Build the image on tag push (`v*`)
+- Push it to DockerHub
+- Uses secrets `DOCKER_USERNAME` and `DOCKER_TOKEN`
 
-### Commands Inside the Container
+### Trigger
 
-Once inside the container, run the following commands:
+```yaml
+on:
+  push:
+    tags:
+      - 'v*'
+```
 
-  npm install
-  npm run build
-  npx serve -s dist/wsu-hw-ng
+## Repository Secrets
 
-Note: Replace "wsu-hw-ng" with the actual build output folder if different.
+| Secret Name      | Description                       |
+|------------------|-----------------------------------|
+| DOCKER_USERNAME  | DockerHub username                |
+| DOCKER_TOKEN     | DockerHub personal access token   |
 
-### Verifying the Application
+## ChatGPT Prompts Used
 
-From inside the container: the serve command will display "Accepting connections at http://localhost:3000".
+Prompts included (representative examples):
 
-From the host: open a browser and navigate to http://localhost:3002 to verify the application is running.
+- "How do I build and run a Docker container using a Dockerfile?"
+- "How do I configure a GitHub Actions workflow to build and push a Docker image?"
+- "How do I expose a container's port properly with docker run?"
 
-## Dockerfile and Building Images
+## Citations
 
-### Summary of the Dockerfile
+- [Docker Docs](https://docs.docker.com/)
+- [GitHub Actions Docs](https://docs.github.com/en/actions)
+- ChatGPT (OpenAI) assisted with workflow setup and Docker run command clarification
 
-FROM node:18-bullseye
-WORKDIR /app
-COPY angular-site/ .
-RUN npm install
-RUN npm run build
-RUN npm install -g serve
-EXPOSE 3000
-CMD ["serve", "-s", "dist/wsu-hw-ng", "-l", "3000"]
+---
 
-### Building the Image
+# Project 5 - CI/CD with Docker and GitHub Actions
 
-To build the image from the Dockerfile:
+## Overview
 
-  docker build -t bargainbinbastard/croop_ceg3120 .
+This project demonstrates a continuous integration and deployment (CI/CD) pipeline using Docker, GitHub Actions, and AWS EC2. Upon each push to the `main` branch, GitHub Actions automatically connects to the EC2 instance, pulls the latest code, and redeploys the application using Docker Compose.
 
-### Running the Container from the Built Image
+## Repository Secrets Configuration
 
-  docker run -p 3002:3000 bargainbinbastard/croop_ceg3120
+### Required Secrets
 
-Then access http://localhost:3002 in the browser.
+- **DOCKER_USERNAME** – Your DockerHub username.
+- **DOCKER_TOKEN** – A DockerHub personal access token with write permissions.
+- **EC2_KEY** – The contents of the EC2 instance’s private key (.pem file).
 
-### Verifying the Application
+### How to Add Secrets
 
-From inside the container: confirmation message will show that the server is accepting connections.
+1. Go to your GitHub repository.
+2. Navigate to **Settings** > **Secrets and variables** > **Actions**.
+3. Click **New repository secret** for each required secret above.
 
-From host: navigate to the mapped port in a web browser (e.g., http://localhost:3002).
+## Continuous Integration with GitHub Actions
 
-## Configuring GitHub Repository Secrets
+### Workflow File
 
-To allow GitHub Actions to access DockerHub, a Personal Access Token (PAT) was created in DockerHub with Read/Write scope. The token was stored securely in the GitHub repository’s secrets.
+Located at `.github/workflows/docker_publish.yml`, this workflow:
 
-The following secrets were configured:
-- DOCKER_USERNAME: DockerHub username
-- DOCKER_TOKEN: DockerHub Personal Access Token
+- Builds the Docker image.
+- Pushes the image to DockerHub when a new tag (starting with `v`) is pushed.
 
-## CI with GitHub Actions
+### Trigger
 
-The GitHub Actions workflow builds and pushes the Docker image to DockerHub whenever a commit is pushed to the main branch.
+```yaml
+on:
+  push:
+    tags:
+      - 'v*'
+```
 
-Workflow steps:
-1. Checkout the GitHub repo
-2. Set up Docker Buildx
-3. Log into DockerHub using repository secrets
-4. Build the Docker image from the Dockerfile
-5. Push the image to DockerHub with the "latest" tag
+## Continuous Deployment to EC2
 
-If used in another repo, update:
-- Docker image tag name
-- DockerHub secrets
-- Branch name (if not using "main")
+### Workflow File
 
-Link to workflow:
-https://github.com/your-username/your-repo-name/blob/main/.github/workflows/docker-publish.yml
+Located at `.github/workflows/deploy.yml`, this workflow:
 
-## Testing & Validating
+- Runs on every push to the `main` branch.
+- SSHs into the EC2 instance.
+- Pulls the latest code.
+- Restarts the Docker Compose service.
 
-To test:
-- Push a commit to the main branch.
-- Go to the Actions tab in GitHub.
-- Confirm that the workflow runs successfully.
+### Deployment Commands (in workflow)
 
-To verify image works:
-  docker pull bargainbinbastard/croop_ceg3120
-  docker run -p 3000:3000 bargainbinbastard/croop_ceg3120
+```bash
+cd ~/ceg3120-cicd-BargainBinBastard
+git pull origin main
+docker compose down
+docker compose up -d
+```
 
-Then navigate to http://localhost:3000 in a browser.
+## Notes
 
-## Working with Your DockerHub Repository
+- Ensure your EC2 security group allows inbound traffic on ports 22 (SSH) and 80 (HTTP).
+- Make sure Docker and Docker Compose are installed and configured on your EC2 instance.
+- The `docker-compose.yml` file must be present in the root of the repo.
 
-### Creating a Public Repository on DockerHub
+## Diagram
 
-1. Log in to DockerHub
-2. Go to Repositories > Create Repository
-3. Set name to croop_ceg3120
-4. Set visibility to Public
-5. Click Create
+See `diagram2.png` for a visual representation of the CI/CD workflow.
 
-### Creating a Personal Access Token (PAT)
+## Citations
 
-1. Visit https://hub.docker.com/settings/security
-2. Click "New Access Token"
-3. Set name (e.g., ceg3120-token)
-4. Set scope to Read/Write (or Read/Write/Delete)
-5. Copy and save the token
+- [Docker Docs](https://docs.docker.com/)
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [AWS EC2 User Guide](https://docs.aws.amazon.com/ec2/)
+- ChatGPT (OpenAI) was used for debugging workflow syntax and deployment logic
 
-Do not store or commit your PAT to this or any public documentation.
 
-### Logging in via CLI Using DockerHub Credentials
+## ChatGPT Prompts Used
 
-  docker logout
-  docker login -u bargainbinbastard
+Representative prompts used in the development of this project include:
 
-Paste the Personal Access Token when prompted.
+- "How do I set up a GitHub Actions workflow to deploy to an EC2 instance over SSH?"
+- "How do I pass a PEM file as a GitHub secret for use in a GitHub Action?"
+- "What are the correct inbound rules for SSH and HTTP access to an EC2 instance?"
+- "How do I write a docker-compose.yml to run a single web service?"
+- "Why isn't my GitHub Action triggering on push to main?"
+- "How do I fix a divergent branch error in Git?"
 
-Do not include the token in this file.
+### Prompt used to generate the CI/CD diagram
 
-### Pushing Container Image to DockerHub
-
-Once logged in, push the image:
-
-  docker push bargainbinbastard/croop_ceg3120
-
-### Link to DockerHub Repository
-
-https://hub.docker.com/r/bargainbinbastard/croop_ceg3120
-
-## Resources
-
-- Docker Docs – CI/CD with GitHub Actions: https://docs.docker.com/build/ci/github-actions/
-- GitHub – build-push-action: https://github.com/docker/build-push-action
-- DockerHub – Managing Access Tokens: https://docs.docker.com/docker-hub/access-tokens/
-- Generative AI used: ChatGPT
-  Prompt: Had it generate the diagram for me, had it check my work.
+- "Draw a simple CI/CD diagram showing code push from GitHub triggering a GitHub Action that SSHs into an EC2 instance, pulls the latest code, and restarts a Docker container."
