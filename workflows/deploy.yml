@@ -17,7 +17,7 @@ jobs:
 
       - name: Deploy app via SSH
         run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@your-ec2-ip << 'EOF'
+          ssh -o StrictHostKeyChecking=no ec2-user@13.218.137.28 << 'EOF'
             cd ~/ceg3120-cicd-BargainBinBastard
             git pull origin main
             docker compose down
